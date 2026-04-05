@@ -1,0 +1,20 @@
+﻿@page "/factorial"
+@rendermode InteractiveServer
+
+<PageTitle>Factorial</PageTitle>
+<h3>Factorial</h3>
+<input type="number" min="0" @bind="n" @bind:after="CalculateFactorial" />
+<div>@n! = @factorial</div>
+@code {
+    int n;
+    int factorial;
+    void CalculateFactorial()
+    {
+        factorial = 1;
+        for (int i = 1; i <= n; i++)
+        {
+            factorial *= i;
+        }
+        Console.WriteLine($"Factorial of {n} is {factorial}");
+    }
+}
