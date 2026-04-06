@@ -1,0 +1,12 @@
+﻿.fibonacci {
+    display: flex;
+    font-size: 24px;
+}
+
+.fib-result {
+    margin: 0 24px;
+}
+
+.fibonacci > input {
+    width: 10%;
+}

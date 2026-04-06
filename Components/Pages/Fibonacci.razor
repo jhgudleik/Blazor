@@ -1,0 +1,19 @@
+﻿@page "/fibonacci"
+@rendermode InteractiveServer
+
+<PageTitle>Fibonacci</PageTitle>
+
+<h3>Fibonacci</h3>
+
+<div class="fibonacci">
+    <input type="number"
+           class="fib-count"
+           min="1"
+           max="15"
+           @bind="count"
+           @bind:after="GenerateFibonacci" />
+
+    <div class="fib-result">
+        @string.Join(", ", fibonacciSequence)
+    </div>
+</div>

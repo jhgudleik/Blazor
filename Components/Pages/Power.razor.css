@@ -1,0 +1,12 @@
+﻿.power {
+    display: flex;
+    font-size: 24px;
+}
+
+.exponent {
+    margin: 0 24px;
+}
+
+.power > input {
+    width: 10%;
+}
