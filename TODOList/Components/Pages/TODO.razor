@@ -4,9 +4,9 @@
 <PageTitle>TODO</PageTitle>
 <h3>TODO</h3>
 <div class="statistics">
-    <h4>Всего заданий: @taskList.Count</h4>
-    <h4>Выполненных заданий: @taskList.Where(t => t.DONE == true).ToList().Count</h4>
-    <h4>Осталось: @taskList.Where(t => t.DONE == false).ToList().Count</h4>
+    <h5>Всего заданий: @taskList.Count</h5>
+    <h5>Выполненных заданий: @taskList.Where(t => t.DONE == true).ToList().Count</h5>
+    <h5>Осталось: @taskList.Where(t => t.DONE == false).ToList().Count</h5>
 </div>
 <input placeholder="Новая задача" @bind="task" @onkeyup="Enter" />
 <button @onclick="AddTask">Добавить</button>
