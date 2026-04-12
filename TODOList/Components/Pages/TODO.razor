@@ -5,21 +5,24 @@
 <h3>TODO</h3>
 <input placeholder="Новая задача" @bind="task" />
 <button @onclick="AddTask">Добавить</button>
-<ul>
+<ul class="tasklist">
     @foreach (TODOitem i in taskList)
     {
-        <li>@i.Title</li>
+        <li>
+            <input type="checkbox" @bind="i.DONE" id="@i.Title"/>
+            <label for="@i.Title" class=@(i.DONE ? "done" : "")>@i.Title</label>
+        </li>
 }
 </ul>
-
 @code {
     List<TODOitem> taskList = [];
     string task;
     void AddTask()
     {
-        if (string.IsNullOrWhiteSpace(task))
+        if (!string.IsNullOrWhiteSpace(task))
         {
             taskList.Add(new TODOitem { Title = task });
+            task = "";
         }
 
     }
