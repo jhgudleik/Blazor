@@ -1,0 +1,58 @@
+﻿@page "/bin2hex"
+@rendermode InteractiveServer
+
+<h3>BIN → HEX</h3>
+
+<div class="converter">
+    <input type="text"
+           value="@bin"
+           @oninput="OnBinInput"
+           @onkeydown="OnKey"
+           placeholder="двоичное число (0 и 1)"
+           title="только 0 и 1"
+           @ref="inputRef" />
+
+    <p class="result"> → @hex</p>
+</div>
+
+@code {
+    private string bin = "0";
+    private string hex = "0";
+    private ElementReference inputRef;
+
+    /* ---------- ввод / фильтр ---------- */
+    private void OnBinInput(ChangeEventArgs e)
+    {
+        var clean = new string((e.Value?.ToString() ?? "")
+                              .Where(c => c is '0' or '1')
+                              .ToArray());
+
+        clean = System.Text.RegularExpressions.Regex.Replace(clean, "^0+(?!$)", "");
+        if (string.IsNullOrEmpty(clean)) clean = "0";
+
+        bin = clean;
+        hex = Convert.ToString(Convert.ToInt64(bin, 2), 16).ToUpper();
+    }
+
+    /* ---------- стрелки внутри поля ---------- */
+    private void OnKey(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Code == "ArrowUp") Increment();
+        if (e.Code == "ArrowDown") Decrement();
+    }
+
+    private void Increment() => Step(+1);
+    private void Decrement() => Step(-1);
+
+    private void Step(int delta)
+    {
+        var num = Convert.ToInt64(bin, 2);
+        num = Math.Max(0, num + delta);
+
+        bin = Convert.ToString(num, 2);
+        hex = Convert.ToString(num, 16).ToUpper();
+
+        StateHasChanged();
+        _ = inputRef.FocusAsync();
+    }
+}

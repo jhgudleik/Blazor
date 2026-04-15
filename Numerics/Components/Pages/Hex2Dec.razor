@@ -1,0 +1,53 @@
+﻿@page "/hex2dec"
+@rendermode InteractiveServer
+
+<h3>HEX → DEC</h3>
+<div class="converter">
+    <input type="text"
+           value="@hex"
+           @oninput="OnHexInput"
+           @onkeydown="OnKey"
+           placeholder="шестнадцатеричное число (0-9, A-F)"
+           title="только 0-9 и A-F"
+           @ref="inputRef" />
+    <div class="result"> → @dec</div>
+</div>
+
+@code {
+    private string hex = "0";
+    private long dec;
+    private ElementReference inputRef;
+
+    /* ---------- ввод / фильтр ---------- */
+    private void OnHexInput(ChangeEventArgs e)
+    {
+        var clean = new string((e.Value?.ToString() ?? "")
+                              .ToUpper()
+                              .Where(c => c is >= '0' and <= '9' or >= 'A' and <= 'F')
+                              .ToArray());
+
+        clean = System.Text.RegularExpressions.Regex.Replace(clean, "^0+(?!$)", "");
+        if (string.IsNullOrEmpty(clean)) clean = "0";
+
+        hex = clean;
+        dec = Convert.ToInt64(hex, 16);
+    }
+
+    /* ---------- стрелки внутри поля ---------- */
+    private void OnKey(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Code == "ArrowUp") Increment();
+        if (e.Code == "ArrowDown") Decrement();
+    }
+
+    private void Increment() => Step(+1);
+    private void Decrement() => Step(-1);
+
+    private void Step(int delta)
+    {
+        dec = Math.Max(0, dec + delta);
+        hex = Convert.ToString(dec, 16).ToUpper();
+        StateHasChanged();
+        _ = inputRef.FocusAsync();
+    }
+}

@@ -1,0 +1,13 @@
+﻿@page "/dec2hex"
+@rendermode InteractiveServer
+
+<h3>DEC → HEX</h3>
+<div class="converter">
+    <input type="number" min="0" @bind="dec" placeholder="10-чное число" /> 
+    <div class="result"> → @Convert.ToString(dec, 16).ToUpperInvariant()</div>
+</div>
+
+@code
+{
+    long dec;
+}

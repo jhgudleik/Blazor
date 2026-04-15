@@ -1,0 +1,14 @@
+﻿@page "/dec2bin"
+@rendermode InteractiveServer
+
+<h3>DEC → BIN</h3>
+
+<div class="converter">
+    <input type="number" min="0" @bind="dec" placeholder="10-чное число" />
+    <div class="result"> → @Convert.ToString(dec, 2)</div>
+</div>
+
+
+@code {
+    long dec;
+}

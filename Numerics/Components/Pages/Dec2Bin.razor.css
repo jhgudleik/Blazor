@@ -1,0 +1,13 @@
+﻿.converter {
+    display: flex;
+    font-size: 24px;
+}
+
+.result {
+    margin: 0 24px;
+}
+
+.converter > input {
+    width: 10%;
+    font-family: monospace;
+}
