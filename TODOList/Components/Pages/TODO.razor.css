@@ -5,7 +5,12 @@
     color:gray;
     text-decoration: line-through;
 }
+
 .statistics{
     display:flex;
     justify-content:space-between;
+}
+
+.tasklist button {
+    margin-left: 10px;
 }

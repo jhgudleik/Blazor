@@ -1,38 +1,49 @@
 ﻿@page "/todo"
 @rendermode InteractiveServer
-
 <PageTitle>TODO</PageTitle>
+
 <h3>TODO</h3>
+
 <div class="statistics">
     <h5>Всего заданий: @taskList.Count</h5>
-    <h5>Выполненных заданий: @taskList.Where(t => t.DONE == true).ToList().Count</h5>
-    <h5>Осталось: @taskList.Where(t => t.DONE == false).ToList().Count</h5>
+    <h5>Выполненных заданий: @taskList.Count(t => t.DONE)</h5>
+    <h5>Осталось: @taskList.Count(t => !t.DONE)</h5>
 </div>
+
 <input placeholder="Новая задача" @bind="task" @onkeyup="Enter" />
 <button @onclick="AddTask">Добавить</button>
+<button @onclick="RemoveCompleted">Удалить выполненные</button>
+
 <ul class="tasklist">
-    @foreach (TODOitem i in taskList)
+    @foreach (var item in taskList)
     {
         <li>
-            <input type="checkbox" @bind="i.DONE" id="@i.Title"/>
-            <label for="@i.Title" class=@(i.DONE ? "done" : "")>@i.Title</label>
+            <input type="checkbox" @bind="item.DONE" id="@item.Title" />
+            <label for="@item.Title" class="@(item.DONE ? "done" : "")">@item.Title</label>
+            <button @onclick="() => DeleteTask(item)" title="Удалить">×</button>
         </li>
-}
+    }
 </ul>
+
 @code {
-    List<TODOitem> taskList = [];
-    string task;
+    List<TODOitem> taskList = new();
+    string task = string.Empty;
+
     void AddTask()
     {
-        if ((!string.IsNullOrWhiteSpace(task)) && !taskList.Contains(new TODOitem {Title = task}))
+        if (!string.IsNullOrWhiteSpace(task) &&
+            !taskList.Any(t => t.Title == task.Trim()))
         {
-            taskList.Add(new TODOitem { Title = task });
-            task = "";
+            taskList.Add(new TODOitem { Title = task.Trim() });
+            task = string.Empty;
         }
-
     }
+
+    void DeleteTask(TODOitem item) => taskList.Remove(item);
+    void RemoveCompleted() => taskList.RemoveAll(t => t.DONE);
+
     void Enter(KeyboardEventArgs e)
     {
-        if(e.Key == "Enter") AddTask();
+        if (e.Key == "Enter") AddTask();
     }
 }
