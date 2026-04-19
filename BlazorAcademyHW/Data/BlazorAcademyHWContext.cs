@@ -19,6 +19,12 @@ namespace BlazorAcademyHW.Data
         {
             // Явно указываем, что сущность Student маппится на таблицу "Students"
             modelBuilder.Entity<Student>().ToTable("Students");
+            // Указываем, что Teachers.Id — это SMALLINT в БД
+            modelBuilder.Entity<Teachers>()
+                .Property(t => t.teacher_id)
+                .HasColumnType("smallint");
+
         }
+        public DbSet<BlazorAcademyHW.Models.Teachers> Teachers { get; set; } = default!;
     }
 }

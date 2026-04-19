@@ -21,7 +21,7 @@ else
             <EditForm method="post" Model="Student" OnValidSubmit="UpdateStudent" FormName="edit" Enhance>
                 <DataAnnotationsValidator />
                 <ValidationSummary role="alert"/>
-                <input type="hidden" name="Student.stud_id" value="@Student.stud_id" />
+                <input readonly name="Student.stud_id" value="@Student.stud_id" />
                 <div class="mb-3">
                 <span class="text-danger">*</span>
                     <label for="last_name" class="form-label">last_name:</label>
