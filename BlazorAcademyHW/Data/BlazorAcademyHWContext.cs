@@ -23,8 +23,18 @@ namespace BlazorAcademyHW.Data
             modelBuilder.Entity<Teachers>()
                 .Property(t => t.teacher_id)
                 .HasColumnType("smallint");
+            // Groups
+            modelBuilder.Entity<Groups>().ToTable("Groups");
+            modelBuilder.Entity<Groups>()
+                .Property(g => g.group_id).HasColumnType("int");
+            modelBuilder.Entity<Groups>()
+                .Property(g => g.group_name).HasColumnType("nchar(10)");
+            modelBuilder.Entity<Groups>()
+                .Property(g => g.direction).HasColumnType("tinyint");
 
         }
         public DbSet<BlazorAcademyHW.Models.Teachers> Teachers { get; set; } = default!;
+        public DbSet<BlazorAcademyHW.Models.Groups> Groups { get; set; } = default!;
+
     }
 }

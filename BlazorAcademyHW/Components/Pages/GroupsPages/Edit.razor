@@ -1,0 +1,94 @@
+﻿@page "/groups/edit"
+@using Microsoft.EntityFrameworkCore
+@using BlazorAcademyHW.Models
+@inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>Groups</h2>
+<hr />
+@if (Groups is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="Groups" OnValidSubmit="UpdateGroups" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert"/>
+                <input readonly name="Groups.group_id" value="@Groups.group_id" />
+                <div class="mb-3">
+                    <label for="group_name" class="form-label">group_name:</label>
+                    <InputText id="group_name" @bind-Value="Groups.group_name" class="form-control" />
+                    <ValidationMessage For="() => Groups.group_name" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="direction" class="form-label">direction:</label>
+                    <InputNumber id="direction" @bind-Value="Groups.direction" class="form-control" />
+                    <ValidationMessage For="() => Groups.direction" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/groups">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int group_id { get; set; }
+
+    [SupplyParameterFromForm]
+    private Groups? Groups { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Groups ??= await context.Groups.FirstOrDefaultAsync(m => m.group_id == group_id);
+
+        if (Groups is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateGroups()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Groups!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!GroupsExists(Groups!.group_id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/groups");
+    }
+
+    private bool GroupsExists(int group_id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Groups.Any(e => e.group_id == group_id);
+    }
+}
