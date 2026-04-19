@@ -21,9 +21,8 @@ namespace BlazorAcademyHW.Data
             modelBuilder.Entity<Student>().ToTable("Students");
             // Указываем, что Teachers.Id — это SMALLINT в БД
             modelBuilder.Entity<Teachers>()
-                .Property(t => t.teacher_id)
-                .HasColumnType("smallint");
-            // Groups
+                .Property(t => t.teacher_id).HasColumnType("smallint");
+            // Дополнительная конфигурация Groups
             modelBuilder.Entity<Groups>().ToTable("Groups");
             modelBuilder.Entity<Groups>()
                 .Property(g => g.group_id).HasColumnType("int");
@@ -31,15 +30,20 @@ namespace BlazorAcademyHW.Data
                 .Property(g => g.group_name).HasColumnType("nchar(10)");
             modelBuilder.Entity<Groups>()
                 .Property(g => g.direction).HasColumnType("tinyint");
-            // Дополнительная конфигурация (опционально)
+            // Дополнительная конфигурация Directions
             modelBuilder.Entity<Directions>()
                 .Property(d => d.direction_id).HasColumnType("tinyint");
-
+            // Дополнительная конфигурация Disciplines
+            modelBuilder.Entity<Disciplines>()
+                .Property(d => d.discipline_id).HasColumnType("smallint");
+            modelBuilder.Entity<Disciplines>()
+                .Property(d => d.number_of_lessons).HasColumnType("tinyint");
 
         }
         public DbSet<BlazorAcademyHW.Models.Teachers> Teachers { get; set; } = default!;
         public DbSet<BlazorAcademyHW.Models.Groups> Groups { get; set; } = default!;
         public DbSet<BlazorAcademyHW.Models.Directions> Directions { get; set; } = default!;
+        public DbSet<BlazorAcademyHW.Models.Disciplines> Disciplines { get; set; } = default!;
 
     }
 }
