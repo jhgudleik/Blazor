@@ -31,10 +31,15 @@ namespace BlazorAcademyHW.Data
                 .Property(g => g.group_name).HasColumnType("nchar(10)");
             modelBuilder.Entity<Groups>()
                 .Property(g => g.direction).HasColumnType("tinyint");
+            // Дополнительная конфигурация (опционально)
+            modelBuilder.Entity<Directions>()
+                .Property(d => d.direction_id).HasColumnType("tinyint");
+
 
         }
         public DbSet<BlazorAcademyHW.Models.Teachers> Teachers { get; set; } = default!;
         public DbSet<BlazorAcademyHW.Models.Groups> Groups { get; set; } = default!;
+        public DbSet<BlazorAcademyHW.Models.Directions> Directions { get; set; } = default!;
 
     }
 }
