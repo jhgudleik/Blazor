@@ -24,15 +24,20 @@ namespace BlazorAcademyHW.Data
                 .Property(t => t.teacher_id).HasColumnType("smallint");
             // Дополнительная конфигурация Groups
             modelBuilder.Entity<Groups>().ToTable("Groups");
+            modelBuilder.Entity<Groups>().Property(g => g.group_id).HasColumnType("int");
+            modelBuilder.Entity<Groups>().Property(g => g.group_name).HasColumnType("nchar(10)");
+            modelBuilder.Entity<Groups>().Property(g => g.direction).HasColumnType("tinyint");
+
+            // НАСТРОЙКА СВЯЗИ Groups <-> Directions
             modelBuilder.Entity<Groups>()
-                .Property(g => g.group_id).HasColumnType("int");
-            modelBuilder.Entity<Groups>()
-                .Property(g => g.group_name).HasColumnType("nchar(10)");
-            modelBuilder.Entity<Groups>()
-                .Property(g => g.direction).HasColumnType("tinyint");
+                .HasOne(g => g.Direction)
+                .WithMany()
+                .HasForeignKey(g => g.direction);
+
             // Дополнительная конфигурация Directions
             modelBuilder.Entity<Directions>()
                 .Property(d => d.direction_id).HasColumnType("tinyint");
+
             // Дополнительная конфигурация Disciplines
             modelBuilder.Entity<Disciplines>()
                 .Property(d => d.discipline_id).HasColumnType("smallint");
