@@ -34,6 +34,12 @@ namespace BlazorAcademyHW.Data
                 .WithMany()
                 .HasForeignKey(g => g.direction);
 
+            // НАСТРОЙКА СВЯЗИ Student <-> Groups  
+            modelBuilder.Entity<Student>()
+                .HasOne(s => s.GroupNavigation)
+                .WithMany()
+                .HasForeignKey(s => s.group);
+
             // Дополнительная конфигурация Directions
             modelBuilder.Entity<Directions>()
                 .Property(d => d.direction_id).HasColumnType("tinyint");

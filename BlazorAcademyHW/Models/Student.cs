@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BlazorAcademyHW.Models
 {
@@ -29,6 +30,11 @@ namespace BlazorAcademyHW.Models
 
         public byte[]? photo { get; set; } // IMAGE → byte[]
 
+        // Внешний ключ
         public int? group { get; set; }
+
+        // Навигационное свойство для связи с таблицей Groups
+        [ForeignKey("group")]
+        public virtual Groups? GroupNavigation { get; set; }
     }
 }
