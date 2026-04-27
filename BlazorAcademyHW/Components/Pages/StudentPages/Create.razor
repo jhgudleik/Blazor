@@ -1,63 +1,83 @@
 ﻿@page "/students/create"
 @using Microsoft.EntityFrameworkCore
 @using BlazorAcademyHW.Models
+@using Microsoft.AspNetCore.Components.Forms
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create</PageTitle>
+@* 
+   Добавляем интерактивный режим рендеринга. 
+   Без него HandleFileSelected и OnValidSubmit не смогут корректно 
+   взаимодействовать с сервером для передачи бинарных данных.
+*@
+@rendermode InteractiveServer
+
+<PageTitle>Create Student</PageTitle>
 
 <h1>Create</h1>
-
 <h2>Student</h2>
 <hr />
+
 <div class="row">
     <div class="col-md-4">
-        <EditForm method="post" Model="Student" OnValidSubmit="AddStudent" FormName="create" Enhance>
+        @* 
+           Удаляем метод "post" и FormName, так как в интерактивном режиме 
+           Blazor сам обработает отправку через сокеты.
+        *@
+        <EditForm Model="Student" OnValidSubmit="AddStudent">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert"/>
+            <ValidationSummary class="text-danger" role="alert" />
+
             <div class="mb-3">
-                <span class="text-danger">*</span>
-                <label for="last_name" class="form-label">last_name:</label> 
-                <InputText id="last_name" @bind-Value="Student.last_name" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => Student.last_name" class="text-danger" /> 
-            </div>        
+                <label for="last_name" class="form-label">Фамилия:</label>
+                <InputText id="last_name" @bind-Value="Student.last_name" class="form-control" />
+                <ValidationMessage For="() => Student.last_name" class="text-danger" />
+            </div>
+
             <div class="mb-3">
-                <span class="text-danger">*</span>
-                <label for="first_name" class="form-label">first_name:</label> 
-                <InputText id="first_name" @bind-Value="Student.first_name" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => Student.first_name" class="text-danger" /> 
-            </div>        
+                <label for="first_name" class="form-label">Имя:</label>
+                <InputText id="first_name" @bind-Value="Student.first_name" class="form-control" />
+                <ValidationMessage For="() => Student.first_name" class="text-danger" />
+            </div>
+
             <div class="mb-3">
-                <label for="middle_name" class="form-label">middle_name:</label> 
-                <InputText id="middle_name" @bind-Value="Student.middle_name" class="form-control" /> 
-                <ValidationMessage For="() => Student.middle_name" class="text-danger" /> 
-            </div>        
+                <label for="middle_name" class="form-label">Отчество:</label>
+                <InputText id="middle_name" @bind-Value="Student.middle_name" class="form-control" />
+            </div>
+
             <div class="mb-3">
-                <span class="text-danger">*</span>
-                <label for="birth_date" class="form-label">birth_date:</label> 
-                <InputDate id="birth_date" @bind-Value="Student.birth_date" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => Student.birth_date" class="text-danger" /> 
-            </div>        
+                <label for="birth_date" class="form-label">Дата рождения:</label>
+                <InputDate id="birth_date" @bind-Value="Student.birth_date" class="form-control" />
+                <ValidationMessage For="() => Student.birth_date" class="text-danger" />
+            </div>
+
             <div class="mb-3">
-                <label for="email" class="form-label">email:</label> 
-                <InputText id="email" @bind-Value="Student.email" class="form-control" /> 
-                <ValidationMessage For="() => Student.email" class="text-danger" /> 
-            </div>        
+                <label for="email" class="form-label">Email:</label>
+                <InputText id="email" @bind-Value="Student.email" class="form-control" />
+            </div>
+
             <div class="mb-3">
-                <label for="phone" class="form-label">phone:</label> 
-                <InputText id="phone" @bind-Value="Student.phone" class="form-control" /> 
-                <ValidationMessage For="() => Student.phone" class="text-danger" /> 
-            </div>        
+                <label for="phone" class="form-label">Телефон:</label>
+                <InputText id="phone" @bind-Value="Student.phone" class="form-control" />
+            </div>
+
             <div class="mb-3">
-                <label for="photo" class="form-label">photo:</label>
-                <InputFile id="photo" @bind-Value="Student.photo" class="form-control" />
-                <ValidationMessage For="() => Student.photo" class="text-danger" /> 
-            </div>        
+                <label for="photo" class="form-label">Фото:</label>
+                <InputFile id="photo" OnChange="HandleFileSelected" class="form-control" accept="image/*" />
+
+                @if (!string.IsNullOrEmpty(previewUrl))
+                {
+                    <div class="mt-2">
+                        <img src="@previewUrl" alt="Preview" style="max-width: 200px; max-height: 200px;" class="img-thumbnail" />
+                    </div>
+                }
+            </div>
+
             <div class="mb-3">
-                <label for="group" class="form-label">group:</label> 
-                <InputNumber id="group" @bind-Value="Student.group" class="form-control" /> 
-                <ValidationMessage For="() => Student.group" class="text-danger" /> 
-            </div>        
+                <label for="group" class="form-label">Группа:</label>
+                <InputNumber id="group" @bind-Value="Student.group" class="form-control" />
+            </div>
+
             <button type="submit" class="btn btn-primary">Create</button>
         </EditForm>
     </div>
@@ -68,15 +88,47 @@
 </div>
 
 @code {
-    [SupplyParameterFromForm]
+    // В интерактивном режиме атрибут [SupplyParameterFromForm] не обязателен
     private Student Student { get; set; } = new();
 
-    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private string? previewUrl;
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            // Увеличиваем лимит для считывания (например, до 10 МБ)
+            long maxAllowedSize = 1024 * 1024 * 10;
+
+            using var stream = file.OpenReadStream(maxAllowedSize);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+
+            // Присваиваем массив байт свойству модели
+            Student.photo = ms.ToArray();
+
+            // Создаем превью для интерфейса
+            previewUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(Student.photo)}";
+        }
+    }
+
     private async Task AddStudent()
     {
-        using var context = DbFactory.CreateDbContext();
-        context.Student.Add(Student);
-        await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/students");
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+
+            // Тщательно проверяем, что массив байт в Student.photo не пустой перед сохранением
+            context.Student.Add(Student);
+            await context.SaveChangesAsync();
+
+            NavigationManager.NavigateTo("/students");
+        }
+        catch (Exception ex)
+        {
+            // Здесь можно обработать ошибку сохранения
+            Console.WriteLine($"Error saving student: {ex.Message}");
+        }
     }
 }
