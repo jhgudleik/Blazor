@@ -6,7 +6,7 @@
 @implements IAsyncDisposable
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
 
-<PageTitle>Index</PageTitle>
+<PageTitle>Students</PageTitle>
 
 <h1>Index</h1>
 <h2>Students</h2>
@@ -15,15 +15,27 @@
     <a href="students/create">Create New</a>
 </p>
 
-<QuickGrid Class="table" Items="context.Student">
-    <PropertyColumn Property="student => student.last_name" />
-    <PropertyColumn Property="student => student.first_name" />
-    <PropertyColumn Property="student => student.middle_name" />
-    <PropertyColumn Property="student => student.birth_date" />
-    <PropertyColumn Property="student => student.email" />
-    <PropertyColumn Property="student => student.phone" />
-    <PropertyColumn Property="student => student.photo" />
-    <PropertyColumn Property="student => student.group" />
+<!-- Форма фильтрации с data-enhance для обновления только контента без полной перезагрузки -->
+<form action="/students" data-enhance class="mb-3">
+    <div class="input-group w-50">
+        <input type="search" name="GroupNameFilter" class="form-control"
+               placeholder="Поиск по названию группы..." value="@GroupNameFilter" />
+        <button class="btn btn-outline-secondary" type="submit">Найти</button>
+    </div>
+</form>
+
+<QuickGrid Class="table table-striped" Items="FilteredStudents">
+    <PropertyColumn Property="student => student.last_name" Title="Фамилия" />
+    <PropertyColumn Property="student => student.first_name" Title="Имя" />
+    <PropertyColumn Property="student => student.middle_name" Title="Отчество" />
+    <PropertyColumn Property="student => student.birth_date" Title="Дата рожд." />
+    <PropertyColumn Property="student => student.email" Title="Email" />
+    <PropertyColumn Property="student => student.phone" Title="Телефон" />
+    <PropertyColumn Property="student => student.group" Title="ID группы" />
+    <!-- Отображаем название группы через навигационное свойство GroupNavigation -->
+    <TemplateColumn Title="Группа">
+        @context.GroupNavigation?.group_name
+    </TemplateColumn>
 
     <TemplateColumn Context="student">
         <a href="@($"students/edit?stud_id={student.stud_id}")">Edit</a> |
@@ -35,10 +47,22 @@
 @code {
     private BlazorAcademyHWContext context = default!;
 
+    // Параметр из строки запроса
+    [SupplyParameterFromQuery]
+    public string? GroupNameFilter { get; set; }
+
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
     }
+
+    // Фильтрация студентов по названию группы — в одну строку, как в /groups
+    // Используем .Include() для подгрузки связанной таблицы Groups,
+    // чтобы в шаблоне работало @context.GroupNavigation?.group_name
+    private IQueryable<Student> FilteredStudents =>
+        context.Student
+            .Include(s => s.GroupNavigation) // Загружаем связь с Groups
+            .Where(s => s.GroupNavigation.group_name.Contains(GroupNameFilter ?? string.Empty));
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }
