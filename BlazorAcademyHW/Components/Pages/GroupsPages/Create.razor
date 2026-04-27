@@ -1,47 +1,83 @@
 ﻿@page "/groups/create"
 @using Microsoft.EntityFrameworkCore
 @using BlazorAcademyHW.Models
+@using BlazorAcademyHW.Data
+@* Включаем интерактивный режим, чтобы @bind срабатывал мгновенно и лейбл обновлялся *@
+@rendermode InteractiveServer
+
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
 @inject NavigationManager NavigationManager
 
 <PageTitle>Create</PageTitle>
 
 <h1>Create</h1>
-
 <h2>Groups</h2>
 <hr />
+
 <div class="row">
     <div class="col-md-4">
-        <EditForm method="post" Model="Groups" OnValidSubmit="AddGroups" FormName="create" Enhance>
+        @* 
+           Убираем Enhance и Method="post", если используем InteractiveServer для работы чистого Blazor.
+        *@
+        <EditForm Model="Groups" OnValidSubmit="AddGroups" FormName="createGroup">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert"/>
+            <ValidationSummary class="text-danger" role="alert" />
+
             <div class="mb-3">
-                <label for="group_name" class="form-label">group_name:</label> 
-                <InputText id="group_name" @bind-Value="Groups.group_name" class="form-control" /> 
-                <ValidationMessage For="() => Groups.group_name" class="text-danger" /> 
-            </div>        
+                <label for="group_name" class="form-label">Group Name:</label>
+                <InputText id="group_name" @bind-Value="Groups.group_name" class="form-control" />
+                <ValidationMessage For="() => Groups.group_name" class="text-danger" />
+            </div>
+
             <div class="mb-3">
-                <label for="direction" class="form-label">direction:</label> 
-                <InputNumber id="direction" @bind-Value="Groups.direction" class="form-control" /> 
-                <ValidationMessage For="() => Groups.direction" class="text-danger" /> 
-            </div>        
+                <label for="directionSelect" class="form-label">Direction:</label>
+                <InputSelect @bind-Value="Groups.direction" class="form-select" id="directionSelect">
+                    <option value="0">-- Select Direction --</option>
+                    @foreach (var dir in Dirs)
+                    {
+                        <option value="@dir.direction_id">@dir.direction_name</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => Groups.direction" class="text-danger" />
+                <div class="mt-2 text-primary">
+                    ID направления: <strong>@(Groups.direction == 0 ? "не выбран" : Groups.direction)</strong>
+                </div>
+            </div>
+
             <button type="submit" class="btn btn-primary">Create</button>
         </EditForm>
     </div>
 </div>
 
-<div>
+<div class="mt-3">
     <a href="/groups">Back to List</a>
 </div>
 
 @code {
+    // Параметр для приема данных формы
     [SupplyParameterFromForm]
-    private Groups Groups { get; set; } = new();
+    public Groups Groups { get; set; } = new();
 
-    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private List<Directions> Dirs = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Загружаем список для выпадающего меню из БД
+        using var context = DbFactory.CreateDbContext();
+        Dirs = await context.Directions.AsNoTracking().ToListAsync();
+    }
+
     private async Task AddGroups()
     {
         using var context = DbFactory.CreateDbContext();
+
+        // Простая проверка перед сохранением
+        if (Groups.direction == 0)
+        {
+            // Здесь можно добавить логику обработки ошибки выбора
+            return;
+        }
+
         context.Groups.Add(Groups);
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/groups");
