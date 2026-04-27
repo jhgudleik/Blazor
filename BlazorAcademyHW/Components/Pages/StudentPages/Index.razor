@@ -15,12 +15,20 @@
     <a href="students/create">Create New</a>
 </p>
 
-<!-- Форма фильтрации с data-enhance для обновления только контента без полной перезагрузки -->
+<!-- Форма фильтрации с двумя полями -->
 <form action="/students" data-enhance class="mb-3">
-    <div class="input-group w-50">
-        <input type="search" name="GroupNameFilter" class="form-control"
-               placeholder="Поиск по названию группы..." value="@GroupNameFilter" />
-        <button class="btn btn-outline-secondary" type="submit">Найти</button>
+    <div class="row g-2">
+        <div class="col-md-4">
+            <input type="search" name="GroupNameFilter" class="form-control"
+                   placeholder="Поиск по названию группы..." value="@GroupNameFilter" />
+        </div>
+        <div class="col-md-4">
+            <input type="search" name="DirectionNameFilter" class="form-control"
+                   placeholder="Поиск по направлению обучения..." value="@DirectionNameFilter" />
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-secondary w-100" type="submit">Найти</button>
+        </div>
     </div>
 </form>
 
@@ -31,10 +39,15 @@
     <PropertyColumn Property="student => student.birth_date" Title="Дата рожд." />
     <PropertyColumn Property="student => student.email" Title="Email" />
     <PropertyColumn Property="student => student.phone" Title="Телефон" />
-    <PropertyColumn Property="student => student.group" Title="ID группы" />
-    <!-- Отображаем название группы через навигационное свойство GroupNavigation -->
+
+    <!-- Отображаем название группы -->
     <TemplateColumn Title="Группа">
         @context.GroupNavigation?.group_name
+    </TemplateColumn>
+
+    <!-- Отображаем название направления через GroupNavigation → Direction -->
+    <TemplateColumn Title="Направление">
+        @context.GroupNavigation?.Direction?.direction_name
     </TemplateColumn>
 
     <TemplateColumn Context="student">
@@ -47,22 +60,28 @@
 @code {
     private BlazorAcademyHWContext context = default!;
 
-    // Параметр из строки запроса
+    // Параметры из строки запроса
     [SupplyParameterFromQuery]
     public string? GroupNameFilter { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? DirectionNameFilter { get; set; }
 
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
     }
 
-    // Фильтрация студентов по названию группы — в одну строку, как в /groups
-    // Используем .Include() для подгрузки связанной таблицы Groups,
-    // чтобы в шаблоне работало @context.GroupNavigation?.group_name
+    // Фильтрация студентов по группе и направлению обучения
+    // Используем цепочку Include → ThenInclude для подгрузки связанных данных
     private IQueryable<Student> FilteredStudents =>
         context.Student
-            .Include(s => s.GroupNavigation) // Загружаем связь с Groups
-            .Where(s => s.GroupNavigation.group_name.Contains(GroupNameFilter ?? string.Empty));
+            .Include(s => s.GroupNavigation)          // Загружаем Groups
+                .ThenInclude(g => g!.Direction)       // Загружаем Direction из Groups
+            .Where(s => s.GroupNavigation.group_name
+                .Contains(GroupNameFilter ?? string.Empty))
+            .Where(s => s.GroupNavigation!.Direction!.direction_name
+                .Contains(DirectionNameFilter ?? string.Empty));
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }
