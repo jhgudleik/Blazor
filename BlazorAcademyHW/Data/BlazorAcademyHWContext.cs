@@ -50,11 +50,17 @@ namespace BlazorAcademyHW.Data
             modelBuilder.Entity<Disciplines>()
                 .Property(d => d.number_of_lessons).HasColumnType("tinyint");
 
+            // Дополнительная конфигурация TeachersDisciplinesRelation
+            modelBuilder.Entity<TeachersDisciplinesRelation>()
+                .HasKey(t => new { t.teacher, t.discipline });
         }
         public DbSet<BlazorAcademyHW.Models.Teachers> Teachers { get; set; } = default!;
         public DbSet<BlazorAcademyHW.Models.Groups> Groups { get; set; } = default!;
         public DbSet<BlazorAcademyHW.Models.Directions> Directions { get; set; } = default!;
         public DbSet<BlazorAcademyHW.Models.Disciplines> Disciplines { get; set; } = default!;
-
+        public DbSet<TeachersDisciplinesRelation> TeachersDisciplinesRelation { get; set; }
     }
 }
+
+
+

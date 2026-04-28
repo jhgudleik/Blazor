@@ -11,38 +11,75 @@
 <div>
     <h2>Discipline</h2>
     <hr />
-    @if (disciplines is null)
+
+    @if (discipline is null)
     {
-        <p><em>Loading...</em></p>
+        <p><em>Loading…</em></p>
     }
-    else {
+    else
+    {
         <dl class="row">
-            <dt class="col-sm-2">discipline_name</dt>
-            <dd class="col-sm-10">@disciplines.discipline_name</dd>
-            <dt class="col-sm-2">number_of_lessons</dt>
-            <dd class="col-sm-10">@disciplines.number_of_lessons</dd>
+            <dt class="col-sm-2">Название</dt>
+            <dd class="col-sm-10">@discipline.discipline_name</dd>
+
+            <dt class="col-sm-2">Кол-во занятий</dt>
+            <dd class="col-sm-10">@discipline.number_of_lessons</dd>
         </dl>
-        <div>
-            <a href="@($"/disciplines/edit?discipline_id={disciplines.discipline_id}")">Edit</a> |
-            <a href="@($"/disciplines")">Back to List</a>
+
+        <!-- Блок преподаватели -->
+        <h4>Преподаватели:</h4>
+
+        @if (teachers.Any())
+        {
+            <ul>
+                @foreach (var t in teachers)
+                {
+                    <li>
+                        <a href="/teachers/details?teacher_id=@t.teacher_id">
+                            @t.last_name @t.first_name @t.middle_name
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-muted">Преподаватели пока не назначены.</p>
+        }
+
+        <div class="mt-3">
+            <a href="@($"disciplines/edit?discipline_id={discipline.discipline_id}")">Edit</a> |
+            <a href="/disciplines">Back to List</a>
         </div>
     }
 </div>
 
 @code {
-    private Disciplines? disciplines;
+    private Disciplines? discipline;
+    private List<Teachers> teachers = new();
 
     [SupplyParameterFromQuery]
     private int discipline_id { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
-        disciplines = await context.Disciplines.FirstOrDefaultAsync(m => m.discipline_id == discipline_id);
+        using var ctx = DbFactory.CreateDbContext();
 
-        if (disciplines is null)
+        discipline = await ctx.Disciplines
+                              .AsNoTracking()
+                              .FirstOrDefaultAsync(d => d.discipline_id == discipline_id);
+
+        if (discipline is null)
         {
             NavigationManager.NavigateTo("notfound");
+            return;
         }
+
+        // преподаватели, привязанные к этой дисциплине
+        teachers = await ctx.Teachers
+                            .AsNoTracking()
+                            .Where(t => ctx.TeachersDisciplinesRelation
+                                           .Any(r => r.discipline == discipline_id && r.teacher == t.teacher_id))
+                            .ToListAsync();
     }
 }
