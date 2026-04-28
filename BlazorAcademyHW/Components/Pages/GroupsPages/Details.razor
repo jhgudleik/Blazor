@@ -15,12 +15,32 @@
     {
         <p><em>Loading...</em></p>
     }
-    else {
+    else
+    {
         <dl class="row">
-            <dt class="col-sm-2">group_name</dt>
+            <dt class="col-sm-2">ID группы</dt>
+            <dd class="col-sm-10">@groups.group_id</dd>
+
+            <dt class="col-sm-2">Название группы</dt>
             <dd class="col-sm-10">@groups.group_name</dd>
-            <dt class="col-sm-2">direction</dt>
-            <dd class="col-sm-10">@groups.direction</dd>
+
+            <dt class="col-sm-2">Направление</dt>
+            <dd class="col-sm-10">@(groups.Direction?.direction_name ?? "Не указано")</dd>
+
+            @* Вывод учебных дней *@
+            <dt class="col-sm-2">Учебные дни</dt>
+            <dd class="col-sm-10">
+                @if (weekInfo != null)
+                {
+                    <span class="badge btn-primary">
+                        @GetDaysString(weekInfo.study_days)
+                    </span>
+                }
+                else
+                {
+                    <span class="text-muted">Дни не заданы</span>
+                }
+            </dd>
         </dl>
         <div>
             <a href="@($"/groups/edit?group_id={groups.group_id}")">Edit</a> |
@@ -31,18 +51,50 @@
 
 @code {
     private Groups? groups;
+    private Week? weekInfo;
+    private string[] DayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
 
     [SupplyParameterFromQuery]
     private int group_id { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        // Используем фабрику контекста для создания локальной области подключения
         using var context = DbFactory.CreateDbContext();
-        groups = await context.Groups.FirstOrDefaultAsync(m => m.group_id == group_id);
+
+        // Загружаем саму группу с данными о направлении
+        groups = await context.Groups
+            .Include(g => g.Direction)
+            .FirstOrDefaultAsync(m => m.group_id == group_id);
 
         if (groups is null)
         {
             NavigationManager.NavigateTo("notfound");
+            return;
         }
+
+        // Загружаем информацию об учебных днях для этой группы
+        weekInfo = await context.Week
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.grp_id == group_id);
+    }
+
+    // Метод для преобразования числовой маски (битов) в строку с названиями дней
+    private string GetDaysString(byte mask)
+    {
+        if (mask == 0) return "—";
+        var selectedDays = new List<string>();
+
+        // Проходим циклом по 7 дням недели
+        for (int i = 0; i < 7; i++)
+        {
+            // Сдвигаем 1 на i позиций и проверяем, установлен ли бит в маске
+            if ((mask & (1 << i)) != 0)
+            {
+                selectedDays.Add(DayNames[i]);
+            }
+        }
+
+        return string.Join(", ", selectedDays);
     }
 }

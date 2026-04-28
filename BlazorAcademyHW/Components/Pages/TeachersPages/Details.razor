@@ -63,21 +63,21 @@
         </div>
 
         <div class="mt-4">
-            <h4>Список дисциплин:</h4>
+            <h4>Дисциплины:</h4>
             @if (assignedDisciplines == null || !assignedDisciplines.Any())
             {
                 <p class="text-muted">Для данного преподавателя дисциплины не назначены.</p>
             }
             else
             {
-                <ul class="list-group col-md-6">
+                <ul class="list-group col-md-7">
                     @foreach (var disc in assignedDisciplines)
                     {
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <a href="/disciplines/details?discipline_id=@disc.discipline_id">
                                 @disc.discipline_name
                             </a>
-                                <span class="badge btn-primary rounded-pill">@disc.number_of_lessons занятий</span>
+                                <span class="badge btn-primary">@disc.number_of_lessons занятий</span>
 
                         </li>
                     }

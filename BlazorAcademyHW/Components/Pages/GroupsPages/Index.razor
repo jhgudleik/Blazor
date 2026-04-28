@@ -3,7 +3,6 @@
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using BlazorAcademyHW.Models
 @using BlazorAcademyHW.Data
-@implements IAsyncDisposable
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
 
 <PageTitle>Index</PageTitle>
@@ -15,18 +14,33 @@
     <a href="groups/create">Create New</a>
 </p>
 
-<form action="/groups" data-enchance>
+<form action="/groups" data-enhance>
     <input type="search" name="DirectionFilter" />
     <input type="submit" value="Search" />
 </form>
 
-
+@* Используем загруженный список groupsList вместо обращения к контексту напрямую в гриде *@
 <QuickGrid Class="table table-striped" Items="FilteredGroups">
     <PropertyColumn Property="groups => groups.group_name" Title="Группа" />
-    <PropertyColumn Property="groups => groups.direction" />
+
     <TemplateColumn Title="Направление">
         @context.Direction?.direction_name
     </TemplateColumn>
+
+    <TemplateColumn Title="Учебные дни">
+        @{
+            var weekInfo = weeksList.FirstOrDefault(w => w.grp_id == context.group_id);
+            if (weekInfo != null)
+            {
+                @GetDaysString(weekInfo.study_days)
+            }
+            else
+            {
+                <span class="text-muted">Не заданы</span>
+            }
+        }
+    </TemplateColumn>
+
     <TemplateColumn Context="groups">
         <a href="@($"groups/edit?group_id={groups.group_id}")">Edit</a> |
         <a href="@($"groups/details?group_id={groups.group_id}")">Details</a> |
@@ -35,22 +49,50 @@
 </QuickGrid>
 
 @code {
-    private BlazorAcademyHWContext context = default!;
+    // Больше не храним context как поле класса, чтобы избежать конфликтов потоков
     private List<Groups> groupsList = new();
+    private List<Week> weeksList = new();
+    private string[] DayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
+
     [SupplyParameterFromQuery]
     string? DirectionFilter { get; set; }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        context = DbFactory.CreateDbContext();
-        groupsList = context.Groups
-            .Include(g => g.Direction) // Загружаем связь
-            .ToList();
+        // Создаем контекст только на время выполнения запроса и сразу закрываем его (using)
+        using var context = DbFactory.CreateDbContext();
+
+        // Загружаем группы и дни сразу. .ToListAsync() выполнит запрос и освободит контекст
+        groupsList = await context.Groups
+            .Include(g => g.Direction)
+            .ToListAsync();
+
+        weeksList = await context.Week.AsNoTracking().ToListAsync();
     }
 
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+    // Фильтруем уже загруженный в память список (AsQueryable)
+    private IQueryable<Groups> FilteredGroups
+    {
+        get
+        {
+            var query = groupsList.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(DirectionFilter))
+            {
+                query = query.Where(g => g.Direction != null &&
+                    g.Direction.direction_name.Contains(DirectionFilter, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
 
-    IQueryable<Groups> FilteredGroups =>
-    context.Groups.Where(g => g.Direction.direction_name.Contains(DirectionFilter ?? string.Empty));
-
+    private string GetDaysString(byte mask)
+    {
+        if (mask == 0) return "—";
+        var selectedDays = new List<string>();
+        for (int i = 0; i < 7; i++)
+        {
+            if ((mask & (1 << i)) != 0) selectedDays.Add(DayNames[i]);
+        }
+        return string.Join(", ", selectedDays);
+    }
 }

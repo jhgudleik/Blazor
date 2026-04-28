@@ -2,67 +2,74 @@
 @using Microsoft.EntityFrameworkCore
 @using BlazorAcademyHW.Models
 @using BlazorAcademyHW.Data
-@* Включаем интерактивность для работы привязки данных в реальном времени *@
 @rendermode InteractiveServer
-
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Edit</PageTitle>
+<PageTitle>Edit Group</PageTitle>
 
 <h1>Edit</h1>
-<h2>Groups</h2>
+<h2>Group</h2>
 <hr />
 
 @if (Groups is null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>Загрузка...</em></p>
 }
 else
 {
-    <div class="row">
-        <div class="col-md-4">
-            <EditForm Model="Groups" OnValidSubmit="UpdateGroups" FormName="editGroup">
-                <DataAnnotationsValidator />
-                <ValidationSummary class="text-danger" role="alert" />
+    <EditForm Model="Groups" OnValidSubmit="UpdateGroups" FormName="editGroup">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" />
 
-                <div class="mb-3">
-                    <label for="group_id" class="form-label">Group ID:</label>
-                    <strong id="group_id">@Groups.group_id</strong>
-                </div>
-
-                <div class="mb-3">
-                    <label for="group_name" class="form-label">Group Name:</label>
-                    <InputText id="group_name" @bind-Value="Groups.group_name" class="form-control" />
-                    <ValidationMessage For="() => Groups.group_name" class="text-danger" />
-                </div>
-
-                <div class="mb-3">
-                    <label for="directionSelect" class="form-label">Direction:</label>
-
-                    @* Используем InputSelect для выбора направления из списка *@
-                    <InputSelect id="directionSelect" @bind-Value="Groups.direction" class="form-select">
-                        <option value="0">-- Select Direction --</option>
-                        @foreach (var dir in Dirs)
-                        {
-                            <option value="@dir.direction_id">@dir.direction_name</option>
-                        }
-                    </InputSelect>
-                    <ValidationMessage For="() => Groups.direction" class="text-danger" />
-
-                    <div class="mt-3">
-                        <label for="direction_id" class="form-label">Direction ID: </label>
-                        <strong id="direction_id">@(Groups.direction == 0 ? "не выбран" : Groups.direction)</strong>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    <a href="/groups" class="btn btn-secondary">Cancel</a>
-                </div>
-            </EditForm>
+        <div class="mb-3">
+            <label class="form-label">ID группы: <strong>@Groups.group_id</strong></label>
         </div>
-    </div>
+
+        <div class="mb-3">
+            <label for="group_name" class="form-label">Название группы:</label>
+            <InputText id="group_name" @bind-Value="Groups.group_name" class="form-control" />
+            <ValidationMessage For="() => Groups.group_name" class="text-danger" />
+        </div>
+
+        <div class="mb-3">
+            <label for="directionSelect" class="form-label">Направление:</label>
+            <InputSelect id="directionSelect" @bind-Value="Groups.direction" class="form-select">
+                <option value="0">-- Выберите направление --</option>
+                @foreach (var dir in Dirs)
+                {
+                    <option value="@dir.direction_id">@dir.direction_name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mt-4">
+            <h4>Учебные дни:</h4>
+            <div class="d-flex flex-wrap gap-2">
+                @for (int i = 0; i < 7; i++)
+                {
+                    var index = i;
+                    <div class="form-check">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               id="day_@index"
+                               checked="@IsDayChecked(index)"
+                               @onchange="e => ToggleDay(index, (bool)e.Value)" />
+
+                        <label class="form-check-label ms-1" for="day_@index">
+                            @Days[index]
+                        </label>
+                    </div>
+                }
+            </div>
+            <small class="text-muted">Текущая маска: @studyDays</small>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="/groups" class="btn btn-secondary">Отмена</a>
+        </div>
+    </EditForm>
 }
 
 @code {
@@ -72,25 +79,57 @@ else
     [SupplyParameterFromForm]
     public Groups? Groups { get; set; }
 
-    // Список всех доступных направлений
     private List<Directions> Dirs = new();
+    private byte studyDays = 0;
+    private string[] Days = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
 
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
 
-        // 1. Загружаем список направлений для выпадающего списка
         Dirs = await context.Directions.AsNoTracking().ToListAsync();
 
-        // 2. Загружаем саму группу, если она еще не загружена из формы
         if (Groups is null)
         {
-            Groups = await context.Groups.FirstOrDefaultAsync(m => m.group_id == group_id);
+            Groups = await context.Groups
+                .Include(g => g.Direction)
+                .FirstOrDefaultAsync(m => m.group_id == group_id);
         }
 
         if (Groups is null)
         {
             NavigationManager.NavigateTo("notfound");
+            return;
+        }
+
+        // Загружаем битовую маску из БД
+        var studyDaysRecord = await context.Week
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.grp_id == group_id);
+
+        if (studyDaysRecord != null)
+        {
+            studyDays = studyDaysRecord.study_days;
+        }
+    }
+
+    // Метод для определения, отмечен ли чекбокс
+    private bool IsDayChecked(int dayIndex)
+    {
+        return (studyDays & (1 << dayIndex)) != 0;
+    }
+
+    // Метод переключения бита
+    private void ToggleDay(int dayIndex, bool isChecked)
+    {
+        int bitValue = 1 << dayIndex;
+        if (isChecked)
+        {
+            studyDays = (byte)(studyDays | bitValue);
+        }
+        else
+        {
+            studyDays = (byte)(studyDays & ~bitValue);
         }
     }
 
@@ -100,30 +139,31 @@ else
 
         using var context = DbFactory.CreateDbContext();
 
-        // Помечаем сущность как измененную
-        context.Attach(Groups).State = EntityState.Modified;
+        var dbGroup = await context.Groups
+            .FirstOrDefaultAsync(g => g.group_id == Groups.group_id);
 
-        try
-        {
-            await context.SaveChangesAsync();
-            NavigationManager.NavigateTo("/groups");
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!GroupsExists(Groups.group_id))
-            {
-                NavigationManager.NavigateTo("notfound");
-            }
-            else
-            {
-                throw;
-            }
-        }
-    }
+        if (dbGroup == null) return;
 
-    private bool GroupsExists(int group_id)
-    {
-        using var context = DbFactory.CreateDbContext();
-        return context.Groups.Any(e => e.group_id == group_id);
+        dbGroup.group_name = Groups.group_name;
+        dbGroup.direction = Groups.direction;
+
+        var existingWeek = await context.Week
+            .FirstOrDefaultAsync(w => w.grp_id == Groups.group_id);
+
+        if (existingWeek != null)
+        {
+            existingWeek.study_days = studyDays;
+        }
+        else
+        {
+            context.Week.Add(new Week
+            {
+                grp_id = Groups.group_id,
+                study_days = studyDays
+            });
+        }
+
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/groups");
     }
 }
