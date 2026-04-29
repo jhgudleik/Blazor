@@ -4,7 +4,7 @@
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Details</PageTitle>
+<PageTitle>Details - Direction</PageTitle>
 
 <h1>Details</h1>
 
@@ -15,12 +15,40 @@
     {
         <p><em>Loading...</em></p>
     }
-    else {
+    else
+    {
         <dl class="row">
-            <dt class="col-sm-2">direction_name</dt>
-            <dd class="col-sm-10">@directions.direction_name</dd>
+            <dt class="col-sm-3">Название направления</dt>
+            <dd class="col-sm-9">@directions.direction_name</dd>
         </dl>
-        <div>
+
+        @* Секция со списком дисциплин *@
+        <div class="mt-4">
+            <h4>Дисциплины направления:</h4>
+            @if (assignedDisciplines == null || !assignedDisciplines.Any())
+            {
+                <p class="text-muted">Дисциплины для этого направления еще не назначены.</p>
+            }
+            else
+            {
+                <ul class="list-group col-md-7">
+                    @foreach (var disc in assignedDisciplines)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>                 
+                                <a href="/disciplines/details?discipline_id=@disc.discipline_id">
+                                    @disc.discipline_name
+                                </a>
+                            </div>
+                            <span class="badge btn-primary">
+                                @disc.number_of_lessons зан.
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+        <div class="mt-4">
             <a href="@($"/directions/edit?direction_id={directions.direction_id}")">Edit</a> |
             <a href="@($"/directions")">Back to List</a>
         </div>
@@ -29,6 +57,8 @@
 
 @code {
     private Directions? directions;
+    // Список для хранения связанных дисциплин
+    private List<Disciplines> assignedDisciplines = new();
 
     [SupplyParameterFromQuery]
     private int direction_id { get; set; }
@@ -36,11 +66,24 @@
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        directions = await context.Directions.FirstOrDefaultAsync(m => m.direction_id == direction_id);
+
+        // Загружаем данные о самом направлении
+        directions = await context.Directions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.direction_id == direction_id);
 
         if (directions is null)
         {
             NavigationManager.NavigateTo("notfound");
+            return;
         }
+
+        // Загружаем дисциплины через таблицу связей с использованием JOIN
+        // Находим все записи в таблице связей для данного направления и берем данные из таблицы Disciplines
+        assignedDisciplines = await (from rel in context.DisciplinesDirectionsRelation
+                                     join disc in context.Disciplines on rel.discipline equals disc.discipline_id
+                                     where rel.direction == direction_id
+                                     orderby disc.discipline_name
+                                     select disc).ToListAsync();
     }
 }

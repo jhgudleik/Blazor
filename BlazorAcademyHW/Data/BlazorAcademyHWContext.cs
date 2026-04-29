@@ -56,7 +56,7 @@ namespace BlazorAcademyHW.Data
 
 
 
-            // ✅ НОВАЯ КОНФИГУРАЦИЯ: Сущность Week
+            // Сущность Week
             modelBuilder.Entity<Week>()
                 .ToTable("Week"); // Явно указываем имя таблицы (если нужно)
 
@@ -68,7 +68,7 @@ namespace BlazorAcademyHW.Data
                 .Property(w => w.study_days)
                 .HasColumnType("tinyint"); // Соответствует TINYINT в SQL
 
-            // ✅ УКАЗЫВАЕМ СВЯЗЬ: Week принадлежит Groups (1:1, с каскадным удалением)
+            // Week принадлежит Groups (1:1, с каскадным удалением)
             modelBuilder.Entity<Week>()
                 .HasOne(w => w.Group)
                 .WithOne() // Groups не знает про Week — это "односторонняя" связь
@@ -76,6 +76,28 @@ namespace BlazorAcademyHW.Data
                 .OnDelete(DeleteBehavior.Cascade); // При удалении группы — удаляются дни занятий
 
 
+            // --- НАСТРОЙКА DisciplinesDirectionsRelation ---
+
+            // 1. Указываем составной первичный ключ (PK)
+            modelBuilder.Entity<DisciplinesDirectionsRelation>()
+                .HasKey(r => new { r.direction, r.discipline });
+
+            // 2. Настраиваем типы данных столбцов для соответствия БД
+            modelBuilder.Entity<DisciplinesDirectionsRelation>()
+                .Property(r => r.direction).HasColumnType("tinyint");
+            modelBuilder.Entity<DisciplinesDirectionsRelation>()
+                .Property(r => r.discipline).HasColumnType("smallint");
+
+            // 3. Явно описываем связи (Foreign Keys)
+            modelBuilder.Entity<DisciplinesDirectionsRelation>()
+                .HasOne(r => r.DirectionNavigation)
+                .WithMany()
+                .HasForeignKey(r => r.direction);
+
+            modelBuilder.Entity<DisciplinesDirectionsRelation>()
+                .HasOne(r => r.DisciplineNavigation)
+                .WithMany()
+                .HasForeignKey(r => r.discipline);
 
         }
         public DbSet<BlazorAcademyHW.Models.Teachers> Teachers { get; set; } = default!;
@@ -84,8 +106,12 @@ namespace BlazorAcademyHW.Data
         public DbSet<BlazorAcademyHW.Models.Disciplines> Disciplines { get; set; } = default!;
         public DbSet<TeachersDisciplinesRelation> TeachersDisciplinesRelation { get; set; }
 
-        // ✅ ДОБАВЛЕНО: Сущность Week (связь с Groups через grp_id)
+        // Сущность Week (связь с Groups через grp_id)
         public DbSet<Week> Week { get; set; } = default!;
+
+        // Добавляем DbSet для таблицы связей DisciplinesDirectionsRelation
+        public DbSet<DisciplinesDirectionsRelation> DisciplinesDirectionsRelation { get; set; }
+
     }
 }
 
