@@ -17,14 +17,51 @@
     }
     else
     {
-        <dl class="row">
-            <dt class="col-sm-3">Название направления</dt>
-            <dd class="col-sm-9">@directions.direction_name</dd>
-        </dl>
+        <h3>
+            <b>@directions.direction_name</b>
+        </h3>
+
+        @* Секция со списком групп и их расписанием *@
+        <div class="mt-4">
+            <h4>Группы:</h4>
+            @if (groupsWithDays == null || !groupsWithDays.Any())
+            {
+                <p class="text-muted">Групп для этого направления еще нет.</p>
+            }
+            else
+            {
+                <ul class="list-group col-md-7">
+                    @foreach (var gr in groupsWithDays)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-people-fill me-2"></i>
+                                Группа:
+                                <a href="/groups/details?group_id=@gr.Group.group_id">
+                                    @gr.Group.group_name
+                                </a>
+                            </div>
+                            <div>
+                                @if (gr.StudyDaysMask.HasValue && gr.StudyDaysMask > 0)
+                                {
+                                    <span class="badge btn-primary">
+                                        @GetDaysString(gr.StudyDaysMask.Value)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">дни не заданы</span>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
 
         @* Секция со списком дисциплин *@
         <div class="mt-4">
-            <h4>Дисциплины направления:</h4>
+            <h4>Дисциплины:</h4>
             @if (assignedDisciplines == null || !assignedDisciplines.Any())
             {
                 <p class="text-muted">Дисциплины для этого направления еще не назначены.</p>
@@ -35,7 +72,7 @@
                     @foreach (var disc in assignedDisciplines)
                     {
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>                 
+                            <div>
                                 <a href="/disciplines/details?discipline_id=@disc.discipline_id">
                                     @disc.discipline_name
                                 </a>
@@ -48,6 +85,7 @@
                 </ul>
             }
         </div>
+
         <div class="mt-4">
             <a href="@($"/directions/edit?direction_id={directions.direction_id}")">Edit</a> |
             <a href="@($"/directions")">Back to List</a>
@@ -57,8 +95,17 @@
 
 @code {
     private Directions? directions;
-    // Список для хранения связанных дисциплин
     private List<Disciplines> assignedDisciplines = new();
+
+    // Вспомогательный класс для хранения группы вместе с маской дней
+    private class GroupWithDays
+    {
+        public Groups Group { get; set; } = null!;
+        public byte? StudyDaysMask { get; set; }
+    }
+
+    private List<GroupWithDays> groupsWithDays = new();
+    private readonly string[] DayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
 
     [SupplyParameterFromQuery]
     private int direction_id { get; set; }
@@ -67,10 +114,9 @@
     {
         using var context = DbFactory.CreateDbContext();
 
-        // Загружаем данные о самом направлении
         directions = await context.Directions
             .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.direction_id == direction_id);
+            .FirstOrDefaultAsync(m => m.direction_id == (byte)direction_id);
 
         if (directions is null)
         {
@@ -78,12 +124,40 @@
             return;
         }
 
-        // Загружаем дисциплины через таблицу связей с использованием JOIN
-        // Находим все записи в таблице связей для данного направления и берем данные из таблицы Disciplines
+        // Загружаем группы и сразу присоединяем данные из таблицы Week
+        // Используем Left Join через Select, чтобы получить маску дней
+        groupsWithDays = await (from g in context.Groups
+                                join w in context.Week on g.group_id equals w.grp_id into weekJoin
+                                from w in weekJoin.DefaultIfEmpty()
+                                where g.direction == direction_id
+                                orderby g.group_name
+                                select new GroupWithDays
+                                {
+                                    Group = g,
+                                    StudyDaysMask = (byte?)w.study_days
+                                }).ToListAsync();
+
+        // Загружаем дисциплины через таблицу связей
         assignedDisciplines = await (from rel in context.DisciplinesDirectionsRelation
                                      join disc in context.Disciplines on rel.discipline equals disc.discipline_id
-                                     where rel.direction == direction_id
+                                     where rel.direction == (byte)direction_id
                                      orderby disc.discipline_name
                                      select disc).ToListAsync();
+    }
+
+    // Метод для преобразования битмаски в названия дней
+    private string GetDaysString(byte mask)
+    {
+        if (mask == 0) return "—";
+        var selectedDays = new List<string>();
+
+        for (int i = 0; i < 7; i++)
+        {
+            if ((mask & (1 << i)) != 0)
+            {
+                selectedDays.Add(DayNames[i]);
+            }
+        }
+        return string.Join(", ", selectedDays);
     }
 }

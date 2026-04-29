@@ -58,7 +58,7 @@
                     <dd class="col-sm-9">@student.phone</dd>
 
                     <dt class="col-sm-3">Группа</dt>
-                    <dd class="col-sm-9">@(student.GroupNavigation?.group_name ?? "-")</dd>
+                    <dd class="col-sm-9"><a href="/groups/details?group_id=@student.group">@(student.GroupNavigation?.group_name ?? "-")</a></dd>
                 </dl>
             </div>
         </div>
@@ -80,7 +80,7 @@
         using var ctx = DbFactory.CreateDbContext();
 
         student = await ctx.Student
-                           .Include(s => s.GroupNavigation)   // подтянем название группы
+                           .Include(s => s.GroupNavigation)   // название группы
                            .AsNoTracking()
                            .FirstOrDefaultAsync(s => s.stud_id == stud_id);
 

@@ -4,7 +4,7 @@
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Details</PageTitle>
+<PageTitle>Details - @(groups?.group_name ?? "Group")</PageTitle>
 
 <h1>Details</h1>
 
@@ -17,17 +17,20 @@
     }
     else
     {
+        <h3>
+            <b>Группа @groups.group_name</b>
+        </h3>
         <dl class="row">
             <dt class="col-sm-2">ID группы</dt>
             <dd class="col-sm-10">@groups.group_id</dd>
 
-            <dt class="col-sm-2">Название группы</dt>
-            <dd class="col-sm-10">@groups.group_name</dd>
-
             <dt class="col-sm-2">Направление</dt>
-            <dd class="col-sm-10">@(groups.Direction?.direction_name ?? "Не указано")</dd>
+            <dd class="col-sm-10">
+                <a href="/directions/details?direction_id=@groups.direction">
+                    @(groups.Direction?.direction_name ?? "Не указано")
+                </a>
+            </dd>
 
-            @* Вывод учебных дней *@
             <dt class="col-sm-2">Учебные дни</dt>
             <dd class="col-sm-10">
                 @if (weekInfo != null)
@@ -42,7 +45,34 @@
                 }
             </dd>
         </dl>
-        <div>
+
+
+
+        @* Секция со списком студентов группы *@
+        <h4>Студенты:</h4>
+        @if (groupStudents.Any())
+        {
+            <ul>
+                @foreach (var student in groupStudents)
+                {
+                    <li>
+                        <a href="/students/details?stud_id=@student.stud_id" ">
+                            @student.last_name @student.first_name @student.middle_name
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-muted">В этой группе пока нет студентов.</p>
+        }
+        <div class="mt-4">
+            <p class="text-muted">Всего студентов: @groupStudents.Count</p>
+        </div>
+
+
+        <div class="mt-3">
             <a href="@($"/groups/edit?group_id={groups.group_id}")">Edit</a> |
             <a href="@($"/groups")">Back to List</a>
         </div>
@@ -52,6 +82,8 @@
 @code {
     private Groups? groups;
     private Week? weekInfo;
+    // Список для хранения студентов данной группы
+    private List<Student> groupStudents = new();
     private string[] DayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
 
     [SupplyParameterFromQuery]
@@ -59,10 +91,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Используем фабрику контекста для создания локальной области подключения
         using var context = DbFactory.CreateDbContext();
 
-        // Загружаем саму группу с данными о направлении
+        // 1. Загружаем данные о группе
         groups = await context.Groups
             .Include(g => g.Direction)
             .FirstOrDefaultAsync(m => m.group_id == group_id);
@@ -73,28 +104,34 @@
             return;
         }
 
-        // Загружаем информацию об учебных днях для этой группы
+        // 2. Загружаем информацию об учебных днях
         weekInfo = await context.Week
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.grp_id == group_id);
+
+        // 3. Загружаем список студентов, привязанных к этой группе
+        // Поле "group" в модели Student — это внешний ключ
+        groupStudents = await context.Student
+            .AsNoTracking()
+            .Where(s => s.group == group_id)
+            .OrderBy(s => s.last_name)
+            .ThenBy(s => s.first_name)
+            .ToListAsync();
     }
 
-    // Метод для преобразования числовой маски (битов) в строку с названиями дней
+    // Метод для декодирования битовой маски дней недели
     private string GetDaysString(byte mask)
     {
         if (mask == 0) return "—";
         var selectedDays = new List<string>();
 
-        // Проходим циклом по 7 дням недели
         for (int i = 0; i < 7; i++)
         {
-            // Сдвигаем 1 на i позиций и проверяем, установлен ли бит в маске
             if ((mask & (1 << i)) != 0)
             {
                 selectedDays.Add(DayNames[i]);
             }
         }
-
         return string.Join(", ", selectedDays);
     }
 }
