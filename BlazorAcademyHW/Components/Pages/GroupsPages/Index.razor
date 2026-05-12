@@ -4,6 +4,7 @@
 @using BlazorAcademyHW.Models
 @using BlazorAcademyHW.Data
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
+@rendermode InteractiveServer
 
 <PageTitle>Index</PageTitle>
 
@@ -18,36 +19,42 @@
     <input type="search" name="DirectionFilter" />
     <input type="submit" value="Search" />
 </form>
+<div>
+    <label for="items-per-page">Количество групп на странице</label>
+    <select id="items-per-page" @bind="pagination.ItemsPerPage">
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="8">8</option>
+        <option value="10">10</option>
+    </select>
+</div>
 
 @* Используем загруженный список groupsList вместо обращения к контексту напрямую в гриде *@
-<QuickGrid Class="table table-striped" Items="FilteredGroups">
-    <PropertyColumn Property="groups => groups.group_name" Title="Группа" />
+<div>
+    <QuickGrid Class="table table-striped" Pagination="pagination" Items="FilteredGroups">
+        <PropertyColumn Sortable="true" Class="group-name" Property="groups => groups.group_name" Title="Группа" />
 
-    <TemplateColumn Title="Направление">
-        @context.Direction?.direction_name
-    </TemplateColumn>
+        <TemplateColumn Class="direction-name" Title="Направление"
+                            SortBy="@(GridSort<Groups>.ByAscending(g => g.direction))">
+            @context.Direction?.direction_name
+        </TemplateColumn>
 
-    <TemplateColumn Title="Учебные дни">
-        @{
+        <TemplateColumn Sortable="false" Class="study-days" Title="Учебные дни">
+            @{
             var weekInfo = weeksList.FirstOrDefault(w => w.grp_id == context.group_id);
-            if (weekInfo != null)
-            {
-                @GetDaysString(weekInfo.study_days)
+            if (weekInfo != null) {@GetDaysString(weekInfo.study_days)}
+            else {<span class="text-muted">Не заданы</span>}
             }
-            else
-            {
-                <span class="text-muted">Не заданы</span>
-            }
-        }
-    </TemplateColumn>
+        </TemplateColumn>
 
-    <TemplateColumn Context="groups">
-        <a href="@($"groups/edit?group_id={groups.group_id}")">Edit</a> |
-        <a href="@($"groups/details?group_id={groups.group_id}")">Details</a> |
-        <a href="@($"groups/delete?group_id={groups.group_id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
-
+        <TemplateColumn Context="groups">
+            <a href="@($"groups/edit?group_id={groups.group_id}")">Edit</a> |
+            <a href="@($"groups/details?group_id={groups.group_id}")">Details</a> |
+            <a href="@($"groups/delete?group_id={groups.group_id}")">Delete</a>
+        </TemplateColumn>
+    </QuickGrid>
+    <Paginator State="pagination" />
+</div>
 @code {
     // Больше не храним context как поле класса, чтобы избежать конфликтов потоков
     private List<Groups> groupsList = new();
@@ -95,4 +102,5 @@
         }
         return string.Join(", ", selectedDays);
     }
+    PaginationState pagination = new PaginationState { ItemsPerPage = 3 };
 }

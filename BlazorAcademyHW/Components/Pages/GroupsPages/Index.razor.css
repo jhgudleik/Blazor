@@ -1,0 +1,15 @@
+﻿
+::deep .group-name {
+    width: 12%;
+}
+
+::deep .direction-name {
+    width: 50%;
+}
+::deep .study-days {
+    width: 20%;
+}
+
+::deep .template-column {
+    width: 18%;
+}
