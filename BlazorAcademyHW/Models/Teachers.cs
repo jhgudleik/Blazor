@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BlazorAcademyHW.Models
 {
@@ -29,5 +31,26 @@ namespace BlazorAcademyHW.Models
         public DateOnly? work_since { get; set; }
 
         public decimal? rate { get; set; } // smallmoney → decimal
+
+        // ===== ВОЗРАСТ =====
+        [NotMapped]
+        public int? Age
+        {
+            get
+            {
+                if (birth_date == null)
+                    return null;
+
+                var today = DateOnly.FromDateTime(DateTime.Today);
+
+                int age = today.Year - birth_date.Value.Year;
+
+                if (birth_date.Value > today.AddYears(-age))
+                    age--;
+
+                return age;
+            }
+        }
+
     }
 }

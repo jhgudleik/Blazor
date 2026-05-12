@@ -5,6 +5,7 @@
 @using BlazorAcademyHW.Data
 @implements IAsyncDisposable
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
+@rendermode InteractiveServer
 
 <PageTitle>Index</PageTitle>
 
@@ -15,23 +16,40 @@
 <p>
     <a href="teachers/create">Create New</a>
 </p>
+<div>
+    <label for="items-per-page">Количество преподавателей на странице</label>
+    <select id="items-per-page" @bind="pagination.ItemsPerPage">
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="8">8</option>
+        <option value="10">10</option>
+    </select>
+</div>
 
-<QuickGrid Class="table" Items="context.Teachers">
-    <PropertyColumn Property="teachers => teachers.last_name" />
-    <PropertyColumn Property="teachers => teachers.first_name" />
-    <PropertyColumn Property="teachers => teachers.middle_name" />
-    <PropertyColumn Property="teachers => teachers.birth_date" />
-    <PropertyColumn Property="teachers => teachers.email" />
-    <PropertyColumn Property="teachers => teachers.phone" />
-    <PropertyColumn Property="teachers => teachers.work_since" />
-    <PropertyColumn Property="teachers => teachers.rate" />
+<div>
+    <QuickGrid Class="table table-striped" Pagination="pagination" Items="context.Teachers">
+        <PropertyColumn Title="Фамилия" Sortable="true" Class="name" Property="teachers => teachers.last_name" />
+        <PropertyColumn Title="Имя" Sortable="true" Class="first-name" Property="teachers => teachers.first_name" />
+        <PropertyColumn Title="Отчество" Sortable="true" Class="name" Property="teachers => teachers.middle_name" />
+        <TemplateColumn Title="age"
+                        SortBy="@(GridSort<Teachers>.ByAscending(x => x.birth_date))">
 
-    <TemplateColumn Context="teachers">
-        <a href="@($"teachers/edit?teacher_id={teachers.teacher_id}")">Edit</a> |
-        <a href="@($"teachers/details?teacher_id={teachers.teacher_id}")">Details</a> |
-        <a href="@($"teachers/delete?teacher_id={teachers.teacher_id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+            @(context.Age is not null ? $"{context.Age}" : "-")
+
+        </TemplateColumn>
+        <PropertyColumn Title="email" Sortable="true" Class="email" Property="teachers => teachers.email" />
+        <PropertyColumn Title="phone" Sortable="true" Class="phone" Property="teachers => teachers.phone" />
+        <PropertyColumn Title="Стаж" Sortable="true" Class="work-since" Property="teachers => teachers.work_since" />
+        <PropertyColumn Title="rate" Sortable="true" Class="rate" Property="teachers => teachers.rate" />
+
+        <TemplateColumn Class="template-column" Context="teachers">
+            <a href="@($"teachers/edit?teacher_id={teachers.teacher_id}")">Edit</a> |
+            <a href="@($"teachers/details?teacher_id={teachers.teacher_id}")">Details</a> |
+            <a href="@($"teachers/delete?teacher_id={teachers.teacher_id}")">Delete</a>
+        </TemplateColumn>
+    </QuickGrid>
+</div>
+<Paginator State="pagination" />
 
 @code {
     private BlazorAcademyHWContext context = default!;
@@ -40,6 +58,9 @@
     {
         context = DbFactory.CreateDbContext();
     }
+
+
+    PaginationState pagination = new PaginationState { ItemsPerPage = 3 };
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }

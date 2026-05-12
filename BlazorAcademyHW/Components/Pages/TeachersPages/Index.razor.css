@@ -1,0 +1,28 @@
+﻿::deep .name {
+    width: 13%;
+}
+
+::deep .first-name {
+    width: 10%;
+}
+
+::deep .age {
+    width: 4%;
+}
+
+::deep .email {
+    width: 6%;
+}
+::deep .phone {
+    width: 6%;
+}
+::deep .work-since {
+    width: 6%;
+}
+::deep .rate {
+    width: 4%;
+}
+
+::deep .template-column {
+    width: 18%;
+}

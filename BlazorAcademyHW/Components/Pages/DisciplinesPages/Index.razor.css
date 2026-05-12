@@ -1,3 +1,11 @@
-﻿::deep .direction-name {
-    width: 75%;
+﻿::deep .discipline-name {
+    width: 70%;
+}
+
+::deep .number-of-lessons {
+    width: 10%;
+}
+
+::deep .template-column {
+    width: 20%;
 }
