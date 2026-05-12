@@ -36,5 +36,22 @@ namespace BlazorAcademyHW.Models
         // Навигационное свойство для связи с таблицей Groups
         [ForeignKey("group")]
         public virtual Groups? GroupNavigation { get; set; }
+
+        // ===== ВОЗРАСТ =====
+        [NotMapped]
+        public int Age
+        {
+            get
+            {
+                var today = DateOnly.FromDateTime(DateTime.Today);
+
+                int age = today.Year - birth_date.Year;
+
+                if (birth_date > today.AddYears(-age))
+                    age--;
+
+                return age;
+            }
+        }
     }
 }

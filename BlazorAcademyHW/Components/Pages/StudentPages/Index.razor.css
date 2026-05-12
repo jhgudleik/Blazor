@@ -1,0 +1,30 @@
+﻿::deep .name {
+    width: 13%;
+}
+
+::deep .first-name {
+    width: 10%;
+}
+
+::deep .age {
+    width: 4%;
+}
+
+::deep .email {
+    width: 6%;
+}
+
+::deep .phone {
+    width: 6%;
+}
+
+::deep .group-name {
+    width: 6%;
+}
+
+::deep .direction-name {
+}
+
+::deep .template-column {
+    width: 18%;
+}
