@@ -5,6 +5,7 @@
 @using BlazorAcademyHW.Data
 @implements IAsyncDisposable
 @inject IDbContextFactory<BlazorAcademyHW.Data.BlazorAcademyHWContext> DbFactory
+@rendermode InteractiveServer
 
 <PageTitle>Index</PageTitle>
 
@@ -15,16 +16,27 @@
     <a href="directions/create">Create New</a>
 </p>
 
-<QuickGrid Class="table" Items="context.Directions">
-    <PropertyColumn Property="directions => directions.direction_name" />
+<div>
+    <label for="items-per-page">Количество направлений на странице</label>
+    <select id="items-per-page" @bind="pagination.ItemsPerPage">
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="8">8</option>
+        <option value="10">10</option>
+    </select>
+</div>
 
-    <TemplateColumn Context="directions">
-        <a href="@($"directions/edit?direction_id={directions.direction_id}")">Edit</a> |
-        <a href="@($"directions/details?direction_id={directions.direction_id}")">Details</a> |
-        <a href="@($"directions/delete?direction_id={directions.direction_id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
-
+<div>
+    <QuickGrid Class="table" Items="context.Directions" Pagination="pagination">
+        <PropertyColumn Class="direction-name" Property="directions => directions.direction_name" Title="Направления" Sortable="true" />
+        <TemplateColumn Class="template-column" Context="directions">
+            <a href="@($"directions/edit?direction_id={directions.direction_id}")">Edit</a> |
+            <a href="@($"directions/details?direction_id={directions.direction_id}")">Details</a> |
+            <a href="@($"directions/delete?direction_id={directions.direction_id}")">Delete</a>
+        </TemplateColumn>
+    </QuickGrid>
+    <Paginator State="pagination" />
+</div>
 @code {
     private BlazorAcademyHWContext context = default!;
 
@@ -34,4 +46,6 @@
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
+    PaginationState pagination = new PaginationState { ItemsPerPage = 3 };
+
 }

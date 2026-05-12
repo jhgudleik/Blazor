@@ -1,0 +1,7 @@
+﻿::deep .direction-name {
+    width: 80%;
+}
+
+::deep .template-column {
+    width: 15%;
+}
