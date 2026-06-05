@@ -6,7 +6,7 @@
 
 ![Movies](png/movies.png)
 
-Опубликовано на [Movies](png/http://blazormovies.tryasp.net/movies)
+Опубликовано на [Movies](http://blazormovies.tryasp.net/movies)
 ## Возможности
 
 * Просмотр списка фильмов
